@@ -16,8 +16,8 @@ exports.createUser = async (req, res) => {
       return res.status(400).json({ message: "Username is already in use" });
     }
 
-    const hashedPassword = await hashPassword(password);
-    const newUser = new User({ username, password: hashedPassword });
+    const hashed = await hashPassword(password);
+    const newUser = new User({ username, password: hashed });
 
     await newUser.save();
   } catch (err) {
@@ -39,23 +39,32 @@ exports.getAllUsers = async (req, res) => {
 exports.getUserById = async (req, res) => {
   const userId = req.params.id;
   try {
-    const user = await user.findById(userId);
+    const getUser = await User.findById(userId);
 
-    if (!user) {
+    if (!getUser) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.status(200).json(user);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json("Internal server error");
+    res.status(200).json(getUser);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
 exports.updateUserById = async (req, res) => {
   const userId = req.params.id;
+  let { username, password } = req.body;
+  const updates = {};
   try {
-    const updatedUser = await User.findByIdAndUpdate(userId, req.body, {
+    if (username) updates.username = username;
+
+    if (password) {
+      const hashed = await hashPassword(password);
+      updates.password = hashed;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(userId, updates, {
       new: true,
       runValidators: true,
     });
@@ -65,9 +74,9 @@ exports.updateUserById = async (req, res) => {
     }
 
     res.status(200).json(updatedUser);
-  } catch (error) {
-    console.error(error);
-    res.status(400).json("Internal server error");
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -81,8 +90,8 @@ exports.deleteUserById = async (req, res) => {
     }
 
     res.status(200).json({ message: "User deleted successfully" });
-  } catch (error) {
-    console.error(error);
-    res.status(400).json("Internal server error");
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
