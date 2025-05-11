@@ -17,8 +17,8 @@ app.use(cors());
 
 readdirSync("./routes").map((i) => {
   try {
-    console.log(`Loading route: ${i}`);
     app.use("/api", require("./routes/" + i));
+    console.log(`Loading route: ${i}`);
   } catch (err) {
     console.log(`Error loading route ${i}:`, err);
   }
