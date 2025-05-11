@@ -1,91 +1,94 @@
-const User = require('../models/user');
+const user = require("../models/user.models");
+const hashPassword = require("../utils/hashPassword");
+// const validatePassword = require("../utils/validatePassword");
+// const { generateToken } = require("../utils/jwtUtils");
 
 exports.createUser = async (req, res) => {
-  const { username, email, password } = req.body;
+  const { username, password } = req.body;
 
-  if (!username || !email || !password) {
-    return res.status(400).json({ message: 'Username, email, and password are required' });
+  if (!username || !password) {
+    return res.status(400).json({ message: "All fields are required" });
   }
 
   try {
-    const existingUsername = await User.findOne({ username });
-    if (existingUsername) {
-      return res.status(400).json({ message: 'Username is already in use' });
+    const existing = await user.findOne({ username });
+    if (existing) {
+      return res.status(400).json({ message: "Username is already in use" });
     }
 
-    const existingEmail = await User.findOne({ email });
-    if (existingEmail) {
-      return res.status(400).json({ message: 'Email is already in use' });
-    }
+    const hashedPassword = await hashPassword(password);
 
-    const user = await User.create({ username, email, password });
+    const newuser = new user({ username, password: hashedPassword });
 
-    res.status(201).json(user);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json('Internal server error');
+    await newuser.save();
+  } catch (err) {
+    console.log(err);
+    res.status(500).json("Internal server error");
   }
 };
 
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.find({}).exec();
-    
+    const users = await user.find({}).exec();
+
     if (!users.length) {
-      return res.status(404).json({ message: 'No users found' });
+      return res.status(404).json({ message: "No users found" });
     }
 
     res.status(200).json(users);
   } catch (error) {
     console.error(error);
-    res.status(500).json('Internal server error');
+    res.status(500).json("Internal server error");
   }
 };
 
 exports.getUserById = async (req, res) => {
-  const userId =  req.params.id;
+  const userId = req.params.id;
   try {
-    const user = await User.findById(userId);
+    const user = await user.findById(userId);
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     res.status(200).json(user);
   } catch (error) {
     console.error(error);
-    res.status(500).json('Internal server error');
+    res.status(500).json("Internal server error");
   }
 };
 
 exports.updateUserById = async (req, res) => {
   const userId = req.params.id;
   try {
-    const updatedUser = await User.findByIdAndUpdate(userId, req.body, { new: true, runValidators: true });
+    const updatedUser = await user.findByIdAndUpdate(userId, req.body, {
+      new: true,
+      runValidators: true,
+    });
 
     if (!updatedUser) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     res.status(200).json(updatedUser);
   } catch (error) {
     console.error(error);
-    res.status(400).json('Internal server error');
+    res.status(400).json("Internal server error");
   }
 };
 
 exports.deleteUserById = async (req, res) => {
   const userId = req.params.id;
   try {
-    const deletedUser = await User.findByIdAndDelete(userId);
+    const deletedUser = await user.findByIdAndDelete(userId);
 
     if (!deletedUser) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
-    res.status(200).json({ message: 'User deleted successfully' });
+    res.status(200).json({ message: "User deleted successfully" });
   } catch (error) {
     console.error(error);
-    res.status(400).json('Internal server error');
+    res.status(400).json("Internal server error");
   }
 };
